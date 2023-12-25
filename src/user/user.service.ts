@@ -66,6 +66,10 @@ export class UserService {
         return tokens;
     }
 
+    async logout(refresh_token:string){
+        return await this.tokenService.removeToken(refresh_token)
+    }
+
     async validate(email:string,password:string){
         const user = await this.userRepo.findUser(email);
         

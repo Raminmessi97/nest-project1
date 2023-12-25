@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Headers, HttpException, HttpStatus, Inject, Post, Request, Res, UnauthorizedException, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, HttpException, HttpStatus, Inject, Post, Req, Request, Res, UnauthorizedException, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { LoginUserDto, UserCreateDto } from './dto/user-create.dto';
 import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
@@ -34,7 +34,10 @@ export class UserController {
 
 
     @Post("login")
-    async login(@Body() userData:LoginUserDto,@Res() res:Response){
+    async login(@Body() userData:LoginUserDto,@Res() res:Response,@Req() req:ExpressRequest){
+        console.log('13123',req.headers['sec-ch-ua-platform'],req.ip);
+        console.log('13123',req.headers['user-agent']);
+        
         let tokens = await this.userService.login(userData.email,userData.password);
         await this.setRefreshCookie(tokens.refresh_token,res);
         res.status(HttpStatus.CREATED).json(tokens);
@@ -66,11 +69,16 @@ export class UserController {
 
     @Post("refresh")
     async refresh_token(@Res() res:Response,@Request() req:ExpressRequest,@Cookie("refresh_token") token:string){
-        console.log("token",token);
-        
         const tokens:IToken =  await this.userService.refresh_token(token)
         this.setRefreshCookie(tokens.refresh_token,res);
         res.status(HttpStatus.CREATED).json(tokens);
+    }
+
+    @Post("logout")
+    async logout(@Res() res:Response,@Request() req:ExpressRequest,@Cookie("refresh_token") token:string){
+        await this.userService.logout(token);
+        res.clearCookie("refreshToken");
+        res.status(HttpStatus.ACCEPTED).json({message:"logout"})
     }
 
 
